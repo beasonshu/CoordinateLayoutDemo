@@ -1,0 +1,198 @@
+<?xml version="1.0" encoding="utf-8"?>
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context="com.deyizai.taptapdetaildemo.MainActivity">
+
+
+    <android.support.design.widget.AppBarLayout
+        android:layout_width="match_parent"
+        android:layout_height="429dp"
+        android:fitsSystemWindows="true"
+        android:orientation="vertical"
+        android:id="@+id/appbarLayout"
+        >
+        <!--exitUntilCollapsed收缩到pin View就不收缩（或滚动）了；
+        如果里面有pin view，则会收缩到pin view，然后滚动消失，下滑再显示pinView；
+        如果没有pin view，则会收缩到消失-->
+        <android.support.design.widget.CollapsingToolbarLayout
+            android:layout_width="match_parent"
+            android:layout_height="381dp"
+
+            app:layout_scrollFlags="scroll|exitUntilCollapsed">
+            <ImageView
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/default_bg"
+                android:id="@+id/main_poster"
+            />
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:visibility="gone"
+                android:id="@+id/smallScreen" />
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="180dp"
+                android:id="@+id/brief_introduction"
+                android:layout_marginTop="200dp"
+                android:background="#fff"
+                android:padding="24dp">
+                <de.hdodenhof.circleimageview.CircleImageView
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:id="@+id/game_icon"/>
+                <TextView
+                    android:layout_width="172dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="18dp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:layout_alignTop="@id/game_icon"
+                    android:layout_toRightOf="@id/game_icon"
+                    android:layout_marginLeft="@dimen/title_text_size"
+                    android:text="@string/title"
+                    android:id="@+id/game_name"/>
+                <TextView
+                    android:layout_width="172dp"
+                    android:layout_height="wrap_content"
+                    android:textSize="12dp"
+                    android:layout_below="@id/game_name"
+                    android:text="G.Gear.inc"
+                    android:textColor="@color/colorBut"
+                    android:layout_alignLeft="@id/game_name"
+                    android:layout_marginTop="10dp"
+                    android:id="@+id/game_company"/>
+                <TextView
+                    android:layout_width="172dp"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@id/game_company"
+                    android:layout_alignLeft="@id/game_company"
+                    android:textSize="12dp"
+                    android:text="19898 downloads"
+                    android:layout_marginTop="6dp"
+                    android:id="@+id/game_dl_count"/>
+                <TextView
+                    android:layout_width="60dp"
+                    android:layout_height="14dp"
+                    android:layout_alignLeft="@id/game_dl_count"
+                    android:layout_below="@id/game_dl_count"
+                    android:layout_marginTop="6dp"/>
+
+                <TextView
+                    android:layout_width="48dp"
+                    android:layout_height="48dp"
+                    android:background="@drawable/score_bg"
+                    android:text="7.8"
+                    android:textSize="24sp"
+                    android:textColor="#fff"
+                    android:gravity="center"
+                    android:layout_alignParentRight="true"
+                    android:paddingTop="10dp"/>
+                <Button
+                    android:layout_width="54dp"
+                    android:layout_height="30dp"
+                    android:layout_alignParentRight="true"
+                    android:layout_alignParentBottom="true"
+                    android:background="@drawable/download_but_bg"
+                    android:textColor="#fff"
+                    android:textSize="16sp"
+                    android:text="@string/download"
+                    android:id="@+id/download"/>
+
+                <Button
+                    android:layout_width="54dp"
+                    android:layout_height="30dp"
+                    android:layout_alignParentBottom="true"
+                    android:layout_toLeftOf="@+id/download"
+                    android:background="@drawable/collect_but_bg"
+                    android:textColor="@color/colorBut"
+                    android:textSize="16sp"
+                    android:text="@string/collect"
+                    android:layout_marginRight="12dp"
+                    android:id="@+id/collect"
+                    />
+            </RelativeLayout>
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="380dp"
+                android:background="#30000000"/>
+            <!--app:navigationIcon:就是那个小箭头，默认null-->
+            <com.deyizai.taptapdetaildemo.CommAlphaToolbar
+                android:layout_width="match_parent"
+                android:layout_height="?attr/actionBarSize"
+                android:background="#20000000"
+                android:id="@+id/toolbar"
+                app:layout_collapseMode="pin"
+                app:title="@string/app_name"
+                app:titleTextColor="#fff"
+                app:buttonGravity="top">
+
+            </com.deyizai.taptapdetaildemo.CommAlphaToolbar>
+        </android.support.design.widget.CollapsingToolbarLayout>
+        <!--layout_scrollFlags/layout_collapseMode-->
+        <!--pin的意思是：固定在栏顶-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:orientation="horizontal"
+            app:layout_collapseMode="pin"
+            android:background="#fff">
+            <net.lucode.hackware.magicindicator.MagicIndicator
+                android:layout_width="fill_parent"
+                android:layout_height="48dp"
+                android:orientation="horizontal"
+                android:layout_weight="1"
+                app:layout_anchor="@+id/main_poster"
+                android:id="@+id/tab_indicator"/>
+            <Button
+                android:layout_width="54dp"
+                android:layout_height="30dp"
+                android:background="@drawable/download_but_bg"
+                android:textColor="#fff"
+                android:textSize="16sp"
+                android:text="@string/download"
+                android:layout_margin="20dp"
+                android:visibility="gone"
+                android:id="@+id/download_in_tab"></Button>
+        </LinearLayout>
+    </android.support.design.widget.AppBarLayout>
+
+        <!--app:layout_behavior="@string/appbar_scrolling_view_behavior"
+            不加这句，就是完全独立的，因为CoordinatorLayout本身是FrameLayout布局，此时就是重叠的情况，且没有交互-->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="8dp"
+                android:background="#10000000"/>
+
+            <com.deyizai.taptapdetaildemo.MeasurableViewPager
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="#666"
+                android:id="@+id/viewPager">
+            <!--这里原生ViewPager设为确定值时才有效..看来要自己处理才行-->
+            </com.deyizai.taptapdetaildemo.MeasurableViewPager>
+        </LinearLayout>
+
+
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:visibility="gone"
+        android:id="@+id/fullScreen">
+
+    </FrameLayout>
+
+
+</android.support.design.widget.CoordinatorLayout>
