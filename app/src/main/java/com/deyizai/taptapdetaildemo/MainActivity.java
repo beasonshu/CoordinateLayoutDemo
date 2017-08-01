@@ -1,10 +1,14 @@
 package com.deyizai.taptapdetaildemo;
 
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
 import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Handler;
 import android.support.design.widget.AppBarLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -17,12 +21,17 @@ import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewStub;
+import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.bumptech.glide.Glide;
+import com.deyizai.taptapdetaildemo.player.Constant;
 import com.deyizai.taptapdetaildemo.player.IJKPlayer;
+import com.deyizai.taptapdetaildemo.player.IJKPlayerListener;
+import com.deyizai.taptapdetaildemo.player.IRenderView;
 import com.deyizai.taptapdetaildemo.player.TextureRenderView;
 
 import net.lucode.hackware.magicindicator.MagicIndicator;
@@ -40,6 +49,14 @@ import java.util.ArrayList;
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
+import tv.danmaku.ijk.media.player.IjkMediaPlayer;
+
+/**
+ * Created  on 2017-7-27.
+ *
+ * @author cdy
+ * @version 1.0.0
+ */
 
 public class MainActivity extends AppCompatActivity {
 
@@ -58,10 +75,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView poster;
 
     @Bind(R.id.smallScreen)
-    FrameLayout smallScreenView;
+    RelativeLayout smallScreenView;
 
     @Bind(R.id.fullScreen)
-    FrameLayout fullScreenView;
+    RelativeLayout fullScreenView;
 
     @Bind(R.id.game_icon)
     CircleImageView iconView;
@@ -73,8 +90,13 @@ public class MainActivity extends AppCompatActivity {
     CommAlphaToolbar toolbar;
 
     IJKPlayer ijkPlayer;
-    TextureRenderView videoView;
+
+    IRenderView mVideoView;
+
+    Handler handler = new Handler();
+
     private boolean mIsTheTitleContainerVisible = true;
+    private boolean mBackPressed = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -88,15 +110,72 @@ public class MainActivity extends AppCompatActivity {
 
         Glide.with(this).load(iconUrl).into(iconView);
 
-        ijkPlayer = new IJKPlayer(this);
+        ijkPlayer = new IJKPlayer(this,smallScreenView);
 
-        videoView = new TextureRenderView(this);
+        ijkPlayer.initRenders(Constant.IJK_RENDER_VIEW);
 
-        ijkPlayer.initRenders(R.string.VideoView_render_texture_view);
+        IJKPlayerListener listener = new IJKPlayerListener(handler,ijkPlayer);
 
-        videoView
+        ijkPlayer.setOnCompletionListener(listener);
+        ijkPlayer.setOnPreparedListener(listener);
+        ijkPlayer.setOnErrorListener(listener);
+        ijkPlayer.setOnInfoListener(listener);
 
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        setTranslucentWindows(this);
+
+        if(vidoeUrl!=null) {
+            ijkPlayer.setVideoURI(Uri.parse(vidoeUrl), 0);
+            smallScreenView.setVisibility(View.VISIBLE);
+            poster.setVisibility(View.INVISIBLE);
+            smallScreenView.setClickable(true);
+
+            smallScreenView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(ijkPlayer.isPlaying()) {
+                        Log.i("MainActivity","onClick#"+getRequestedOrientation());
+                        if(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
+                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+                            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) smallScreenView.getLayoutParams();
+                            oldHeight = params.height;
+                            oldWidth = params.width;
+                            params.width = WindowManager.LayoutParams.MATCH_PARENT;
+                                    //DecorView的宽高是按照竖屏的
+                            smallScreenView.setLayoutParams(params);
+                        }
+                        else if(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
+                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) smallScreenView.getLayoutParams();
+                            params.height = oldHeight;
+                            params.width = oldWidth;
+                            smallScreenView.setLayoutParams(params);
+
+                        }
+                    }
+                }
+            });
+            fullScreenView.setClickable(true);
+            fullScreenView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    if(ijkPlayer.isPlaying()) {
+                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+                    }
+                }
+            });
+
+        }
     }
+    static public void setTranslucentWindows(Activity activity) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            //透明状态栏
+            activity.getWindow().addFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+        }
+    }
+
+
+    int oldHeight,oldWidth;
 
     private void initAppBarLayout() {
         appbarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
@@ -207,6 +286,22 @@ public class MainActivity extends AppCompatActivity {
         return super.dispatchTouchEvent(ev);
     }
 
+    @Override
+    public void onBackPressed() {
+        mBackPressed = true;
+        super.onBackPressed();
+    }
+    @Override
+    protected void onStop() {
+        super.onStop();
+        //点击返回或不允许后台播放时 释放资源
+        if (mBackPressed) {
+            ijkPlayer.stopPlayback();
+            ijkPlayer.release(true);
+        }
+    }
+
+    /*
     public void changeScreenOrientation(boolean isLandScape){
         if(this.getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT)
         {
@@ -241,4 +336,5 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+    */
 }

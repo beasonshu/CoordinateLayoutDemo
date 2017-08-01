@@ -15,7 +15,7 @@ public class Constant {
     public static final int PV_PLAYER__IjkMediaPlayer = 2;
 
     public static int IJK_MEDIA_PLAYER = PV_PLAYER__AndroidMediaPlayer;
-    public static int IJK_RENDER_VIEW = IJKPlayer.RENDER_SURFACE_VIEW;
+    public static int IJK_RENDER_VIEW = IJKPlayer.RENDER_TEXTURE_VIEW;
 
     public static int IJK_RENDER_VIEW_DETAIL = IJKPlayer.RENDER_TEXTURE_VIEW;
 

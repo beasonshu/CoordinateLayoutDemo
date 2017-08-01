@@ -36,7 +36,7 @@ public class EventableNestScrollView extends NestedScrollView{
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent ev) {
-        Log.i("EventableNestScrollView","dispatchTouchEvent#");
+        //Log.i("EventableNestScrollView","dispatchTouchEvent#");
         return super.dispatchTouchEvent(ev);
     }
 
@@ -44,7 +44,7 @@ public class EventableNestScrollView extends NestedScrollView{
 
     @Override
     public boolean onTouchEvent(MotionEvent ev) {
-        Log.i("EventableNestScrollView","onTouchEvent#"+ev.getRawY());
+        //Log.i("EventableNestScrollView","onTouchEvent#"+ev.getRawY());
         if(ev.getAction() == MotionEvent.ACTION_DOWN){
             preY = ev.getRawY();
         }
@@ -54,7 +54,7 @@ public class EventableNestScrollView extends NestedScrollView{
 
     @Override
     protected void onOverScrolled(int scrollX, int scrollY, boolean clampedX, boolean clampedY) {
-        Log.i("EventableNestScrollView","onOverScrolled#"+clampedY);
+        //Log.i("EventableNestScrollView","onOverScrolled#"+clampedY);
         super.onOverScrolled(scrollX, scrollY, clampedX, clampedY);
     }
 

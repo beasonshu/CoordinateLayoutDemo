@@ -24,9 +24,6 @@ import tv.danmaku.ijk.media.player.IMediaPlayer;
 import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 
 
-/**
- * Created by xuyunyu_konka on 2016-12-17.
- */
 
 public class IJKPlayer implements MediaController.MediaPlayerControl {
 
@@ -197,6 +194,24 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
         }
         mRoot = root;
         initRenders(render);
+    }
+
+    public void switchRoot( ViewGroup root,boolean isVertical) {
+        if (mRenderView != null) {
+            //TODO
+
+            View renderUIView = mRenderView.getView();
+            if (null != mRoot) {
+                mRoot.removeView(renderUIView);
+            }
+            mRoot = root;
+            FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    FrameLayout.LayoutParams.WRAP_CONTENT,
+                    Gravity.CENTER);
+            renderUIView.setLayoutParams(lp);
+            mRoot.addView(renderUIView,0);
+        }
     }
 
     public void setUseTextureView(boolean useTextureView) {

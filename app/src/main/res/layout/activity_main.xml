@@ -10,7 +10,6 @@
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="429dp"
-        android:fitsSystemWindows="true"
         android:orientation="vertical"
         android:id="@+id/appbarLayout"
         >
@@ -29,11 +28,6 @@
                 android:src="@drawable/default_bg"
                 android:id="@+id/main_poster"
             />
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:visibility="gone"
-                android:id="@+id/smallScreen" />
 
             <RelativeLayout
                 android:layout_width="match_parent"
@@ -117,6 +111,15 @@
                     android:id="@+id/collect"
                     />
             </RelativeLayout>
+
+            <RelativeLayout
+                android:layout_width="match_parent"
+                android:layout_height="200dp"
+                android:visibility="invisible"
+                android:background="#000"
+                android:fitsSystemWindows="true"
+                android:id="@+id/smallScreen" />
+
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
@@ -186,13 +189,14 @@
 
 
 
-    <FrameLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:visibility="gone"
+        android:background="#000"
         android:id="@+id/fullScreen">
 
-    </FrameLayout>
+    </RelativeLayout>
 
 
 </android.support.design.widget.CoordinatorLayout>

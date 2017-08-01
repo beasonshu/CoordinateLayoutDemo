@@ -45,7 +45,7 @@ public class CommAlphaToolbar extends Toolbar{
 
     @Override
     public void setBackgroundColor(@ColorInt int color) {
-        Log.i("CommAutoAlphaToolbar","setBackgroundColor#color");
+        //Log.i("CommAutoAlphaToolbar","setBackgroundColor#color");
         this.color = color;
         super.setBackgroundColor(color);
     }

@@ -46,16 +46,8 @@ public class IJKPlayerListener implements IMediaPlayer.OnPreparedListener, IMedi
         Trace.Info(TAG + "onCompletion");
         Trace.Info(TAG + this);
         isPrepare = false;
-        if (isCarousel) {
-            if (mCurrentRotateChannel == null) {
-                iniVideoView(true, channelID);
-            } else {
-                iniVideoView(mCurrentRotateChannel);
-            }
 
-        } else {
-            ijkPlayer.setVideoURI(ijkPlayer.getmUri(), 0);
-        }
+        ijkPlayer.setVideoURI(ijkPlayer.getmUri(), 0);
 
 
     }
