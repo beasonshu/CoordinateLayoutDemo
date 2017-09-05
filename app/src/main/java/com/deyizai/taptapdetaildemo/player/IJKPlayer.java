@@ -9,6 +9,7 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.SurfaceHolder;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
@@ -79,6 +80,8 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
     private long mSeekStartTime = 0;
     private long mSeekEndTime = 0;
     private boolean isFirst = true;
+
+
 
 
     public IJKPlayer(Context context) {
@@ -258,6 +261,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
 
     @SuppressLint("ObsoleteSdkInt")
     private void openVideo() {
+        Log.i("IJKPlayer","openVideo#begin");
         if (mUri == null || mSurfaceHolder == null) {
             // not ready for playback just yet, will try again later
             return;
@@ -382,7 +386,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
         }
     }
 
-    private void bindSurfaceHolder(IMediaPlayer mp, IRenderView.ISurfaceHolder holder) {
+    public void bindSurfaceHolder(IMediaPlayer mp, IRenderView.ISurfaceHolder holder) {
         if (mp == null)
             return;
 
@@ -395,6 +399,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
     }
 
     public void playSeek() {
+        Log.i("IJKPlayer","playSeek#begin");
         if (mMediaPlayer != null) {
             if (mSeekWhenPrepared != 0) {
                 seekTo(mSeekWhenPrepared);
@@ -404,9 +409,29 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
     }
 
     public void play() {
+        Log.i("IJKPlayer","play#begin");
         if (mMediaPlayer != null) {
             Trace.Info(TAG + " mMediaPlayer");
             bindSurfaceHolder(mMediaPlayer, mSurfaceHolder);
+            //// TODO: 2017-9-4  即时恢复播放
+            if(mRenderView instanceof TextureRenderView){//todo:暂时写了TextureRenderView的
+                TextureRenderView renderView= (TextureRenderView) mRenderView;
+                Log.i("IJKPlayer","play#surface not null!!!!!!!!!!!!!!!!!!!!! set it!");
+                if(renderView.mSurfaceCallback!=null && renderView.mSurfaceCallback.mSurfaceTexture!=null) {
+                    //todo:恢复surface
+                    if(renderView.getSurfaceTexture() == null) {
+                        //todo:判断作用——有的界面（怀疑也是用textureview导致）显示在前台，但是不会触发surfaceDestory，这里判断下，否则，会有  queueBuffer: BufferQueue has been abandoned!  的错误。
+                        Log.i("IJKPlayer", "play#surface not null!!!!!!!!!!!!!!!!!!!!! set it!");
+                        renderView.setSurfaceTexture(renderView.mSurfaceCallback.mSurfaceTexture);
+                    }
+                }
+                else if(getCurrentPosition()!=0){
+                    playSeek();
+                    return;
+                }
+                start();
+            }
+
         } else
             openVideo();
     }
@@ -424,9 +449,6 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
             boolean isValidState = (mTargetState == STATE_PLAYING || mTargetState == STATE_PAUSED);
             boolean hasValidSize = !mRenderView.shouldWaitForResize() || (mVideoWidth == w && mVideoHeight == h);
             if (mMediaPlayer != null && isValidState && hasValidSize) {
-                if (mSeekWhenPrepared != 0) {
-                    seekTo(mSeekWhenPrepared);
-                }
                 if(isFirst && mTargetState != STATE_PAUSED){
                     start();
                     isFirst = false;
@@ -452,6 +474,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
 
         @Override
         public void onSurfaceDestroyed(@NonNull IRenderView.ISurfaceHolder holder) {
+
             if (holder.getRenderView() != mRenderView) {
                 Trace.Warning(TAG + "onSurfaceDestroyed: unmatched render callback\n" + holder.getRenderView());
                 return;
@@ -459,24 +482,26 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
             Trace.Info(TAG + " onSurfaceDestroyed " + holder.getRenderView());
             Trace.Info(TAG + " mMediaPlayer = " + mMediaPlayer);
             // after we return from this we can't use the surface any more
-            mSurfaceHolder = null;
-            releaseWithoutStop();
+            //mSurfaceHolder = null;
+            //releaseWithoutStop();
             if (mMediaPlayer != null) {
                 Trace.Info(TAG + " isInPlaybackState = " + isInPlaybackState());
                 mSeekWhenPrepared = getCurrentPosition();
                 Trace.Info(TAG + " mSeekWhenPrepared = " + mSeekWhenPrepared);
             }
-            release(false);
+            pause();
         }
     };
 
     IMediaPlayer.OnVideoSizeChangedListener mSizeChangedListener =
             new IMediaPlayer.OnVideoSizeChangedListener() {
                 public void onVideoSizeChanged(IMediaPlayer mp, int width, int height, int sarNum, int sarDen) {
+                    Log.i("IJKPlayer","onVideoSizeChanged#begin");
                     mVideoWidth = mp.getVideoWidth();
                     mVideoHeight = mp.getVideoHeight();
                     mVideoSarNum = mp.getVideoSarNum();
                     mVideoSarDen = mp.getVideoSarDen();
+                    Log.i("IJKPlayer","onVideoSizeChanged#mVideoWidth:"+mVideoWidth+"/mVideoHeight:"+mVideoHeight);
                     if (mVideoWidth != 0 && mVideoHeight != 0) {
                         if (mRenderView != null) {
                             mRenderView.setVideoSize(mVideoWidth, mVideoHeight);
@@ -490,6 +515,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
 
     IMediaPlayer.OnPreparedListener mPreparedListener = new IMediaPlayer.OnPreparedListener() {
         public void onPrepared(IMediaPlayer mp) {
+            Log.i("IJKPlayer","onPrepared#begin");
             mPrepareEndTime = System.currentTimeMillis();
             //mHudViewHolder.updateLoadCost(mPrepareEndTime - mPrepareStartTime);
             mCurrentState = STATE_PREPARED;
@@ -513,18 +539,27 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
             Trace.Info(TAG + " mTargetState = " + mTargetState);
             if (mVideoWidth != 0 && mVideoHeight != 0) {
                 //Log.i("@@@@", "video size: " + mVideoWidth +"/"+ mVideoHeight);
+                Log.i("IJKPlayer","onPrepared#has video size");
                 // REMOVED: getHolder().setFixedSize(mVideoWidth, mVideoHeight);
                 if (mRenderView != null) {
+                    Log.i("IJKPlayer","onPrepared#mRenderView != null");
                     mRenderView.setVideoSize(mVideoWidth, mVideoHeight);
                     mRenderView.setVideoSampleAspectRatio(mVideoSarNum, mVideoSarDen);
                     if (!mRenderView.shouldWaitForResize() || mSurfaceWidth == mVideoWidth && mSurfaceHeight == mVideoHeight) {
                         // We didn't actually change the size (it was already at the size
                         // we need), so we won't get a "surface changed" callback, so
                         // start the video here instead of in the callback.
+                        Log.i("IJKPlayer","onPrepared#bulabula");
                         if (mTargetState == STATE_PLAYING || mTargetState == STATE_ERROR) {
+                            Log.i("IJKPlayer","onPrepared#start!!!has video size!");
                             start();
                         } else if (!isPlaying() &&
                                 (seekToPosition != 0 || getCurrentPosition() > 0)) {
+                            Log.i("IJKPlayer","onPrepared#what?");
+                        }
+                        else{
+                            Log.i("IJKPlayer","onPrepared#custom play");
+                           // pause();
                         }
                     }
                 }
@@ -532,6 +567,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
                 // We don't know the video size yet, but should start anyway.
                 // The video size might be reported to us later.
                 if (mTargetState == STATE_PLAYING) {
+                    Log.i("IJKPlayer","onPrepared#start!!!no video size!");
                     start();
                 }
             }
@@ -700,7 +736,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
 
     @Override
     public void start() {
-        Trace.Info(TAG + " start");
+        Trace.Info(TAG + " start ## isInPlaybackState:"+isInPlaybackState());
 
         if (isInPlaybackState()) {
             mMediaPlayer.start();
@@ -747,6 +783,8 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
 
     @Override
     public void seekTo(int pos) {
+
+        Log.i("IJKPlayer","seekTo#begin:"+isInPlaybackState());
         if (isInPlaybackState()) {
             try{
                 mSeekStartTime = System.currentTimeMillis();
@@ -794,7 +832,7 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
         return 0;
     }
 
-    private boolean isInPlaybackState() {
+    public boolean isInPlaybackState() {
         return (mMediaPlayer != null &&
                 mCurrentState != STATE_ERROR &&
                 mCurrentState != STATE_IDLE &&
@@ -852,5 +890,16 @@ public class IJKPlayer implements MediaController.MediaPlayerControl {
     public void resumePlay(int seekPosition) {
         mSeekWhenPrepared = seekPosition;
         openVideo();
+    }
+
+    public void destory(){
+        release(true);
+        if(mRenderView!=null){
+            if(mRenderView instanceof TextureRenderView){
+                TextureRenderView renderView = (TextureRenderView) mRenderView;
+                renderView.mSurfaceCallback.releaseSurfaceTexture(renderView.mSurfaceCallback.mSurfaceTexture);
+
+            }
+        }
     }
 }

@@ -3,13 +3,13 @@ package com.deyizai.taptapdetaildemo;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.ActivityInfo;
-import android.content.res.Configuration;
 import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Handler;
 import android.support.design.widget.AppBarLayout;
+import android.support.design.widget.CoordinatorLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
@@ -19,20 +19,21 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
-import android.view.ViewStub;
 import android.view.WindowManager;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.deyizai.taptapdetaildemo.player.Constant;
 import com.deyizai.taptapdetaildemo.player.IJKPlayer;
 import com.deyizai.taptapdetaildemo.player.IJKPlayerListener;
 import com.deyizai.taptapdetaildemo.player.IRenderView;
-import com.deyizai.taptapdetaildemo.player.TextureRenderView;
+import com.deyizai.taptapdetaildemo.player.ScreenVideoView;
+import com.wyt.searchbox.SearchFragment;
+import com.wyt.searchbox.custom.IOnSearchClickListener;
 
 import net.lucode.hackware.magicindicator.MagicIndicator;
 import net.lucode.hackware.magicindicator.ViewPagerHelper;
@@ -45,11 +46,21 @@ import net.lucode.hackware.magicindicator.buildins.commonnavigator.indicators.Li
 import net.lucode.hackware.magicindicator.buildins.commonnavigator.titles.ColorTransitionPagerTitleView;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import butterknife.Bind;
 import butterknife.ButterKnife;
 import de.hdodenhof.circleimageview.CircleImageView;
-import tv.danmaku.ijk.media.player.IjkMediaPlayer;
+import io.reactivex.Observable;
+import io.reactivex.ObservableEmitter;
+import io.reactivex.ObservableOnSubscribe;
+import io.reactivex.ObservableSource;
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.disposables.Disposable;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
+
+import static com.deyizai.taptapdetaildemo.player.IJKPlayer.STATE_PAUSED;
 
 /**
  * Created  on 2017-7-27.
@@ -61,7 +72,8 @@ import tv.danmaku.ijk.media.player.IjkMediaPlayer;
 public class MainActivity extends AppCompatActivity {
 
     String iconUrl = "https://img.taptapdada.com/market/lcs/170978c6eb89f5a1ed5f4734b2cb9952_360.png";
-    String vidoeUrl = "https://video2.taptapdada.com/t/20170228/240p_m3u8/loASOKZQgHC3kTJEmxy3tHj-hzo-.mp4/v.m3u8";
+
+    Handler handler = new Handler();
 
     String[] indicator_tabs;
 
@@ -75,10 +87,10 @@ public class MainActivity extends AppCompatActivity {
     ImageView poster;
 
     @Bind(R.id.smallScreen)
-    RelativeLayout smallScreenView;
+    ScreenVideoView smallScreenView;
 
-    @Bind(R.id.fullScreen)
-    RelativeLayout fullScreenView;
+    @Bind(R.id.func_bar)
+    LinearLayout func_bar;
 
     @Bind(R.id.game_icon)
     CircleImageView iconView;
@@ -86,17 +98,19 @@ public class MainActivity extends AppCompatActivity {
     @Bind(R.id.appbarLayout)
     AppBarLayout appbarLayout;
 
+    @Bind(R.id.coorLayout)
+    CoordinatorLayout coorLayout;
+
     @Bind(R.id.toolbar)
     CommAlphaToolbar toolbar;
 
-    IJKPlayer ijkPlayer;
 
-    IRenderView mVideoView;
-
-    Handler handler = new Handler();
 
     private boolean mIsTheTitleContainerVisible = true;
     private boolean mBackPressed = false;
+
+    int oldHeight,oldWidth;
+    float oldX,oldY;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -107,66 +121,123 @@ public class MainActivity extends AppCompatActivity {
         initIndicator();
         initViewPager();
         initAppBarLayout();
+        initSearchFragment();
 
         Glide.with(this).load(iconUrl).into(iconView);
-
-        ijkPlayer = new IJKPlayer(this,smallScreenView);
-
-        ijkPlayer.initRenders(Constant.IJK_RENDER_VIEW);
-
-        IJKPlayerListener listener = new IJKPlayerListener(handler,ijkPlayer);
-
-        ijkPlayer.setOnCompletionListener(listener);
-        ijkPlayer.setOnPreparedListener(listener);
-        ijkPlayer.setOnErrorListener(listener);
-        ijkPlayer.setOnInfoListener(listener);
 
         setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setTranslucentWindows(this);
 
-        if(vidoeUrl!=null) {
-            ijkPlayer.setVideoURI(Uri.parse(vidoeUrl), 0);
-            smallScreenView.setVisibility(View.VISIBLE);
-            poster.setVisibility(View.INVISIBLE);
-            smallScreenView.setClickable(true);
+        func_bar.setVisibility(View.INVISIBLE);
 
             smallScreenView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    if(ijkPlayer.isPlaying()) {
-                        Log.i("MainActivity","onClick#"+getRequestedOrientation());
+                    if(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
+                        /*
+                            turnToPortrait();
+                        */
+                        smallScreenView.funcBar.setVisibility(View.VISIBLE);
+                        delaySetFuncBarVisiablity(false);
+                    }
+                    else if(smallScreenView.ijkPlayer.isPlaying()) {
                         if(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_PORTRAIT) {
-                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
-                            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) smallScreenView.getLayoutParams();
-                            oldHeight = params.height;
-                            oldWidth = params.width;
-                            params.width = WindowManager.LayoutParams.MATCH_PARENT;
-                                    //DecorView的宽高是按照竖屏的
-                            smallScreenView.setLayoutParams(params);
+                            turnToLandscape();
                         }
-                        else if(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
-                            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                            FrameLayout.LayoutParams params = (FrameLayout.LayoutParams) smallScreenView.getLayoutParams();
-                            params.height = oldHeight;
-                            params.width = oldWidth;
-                            smallScreenView.setLayoutParams(params);
+                    }
 
-                        }
-                    }
-                }
-            });
-            fullScreenView.setClickable(true);
-            fullScreenView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    if(ijkPlayer.isPlaying()) {
-                        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
-                    }
                 }
             });
 
-        }
     }
+
+    public void turnToPortrait(){
+        PlayerBehavior.isVaild = true;
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
+        smallScreenView.setSmallScreen();
+        toolbar.setVisibility(View.VISIBLE);
+    }
+
+    public void turnToLandscape(){
+        PlayerBehavior.isVaild = false;//会有影响
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE);
+        smallScreenView.setFullScreen(getWindow().getDecorView().getWidth());
+        //appbarLayout.setExpanded(true); 代码控制展开收缩，应该会有用
+        func_bar.setVisibility(View.VISIBLE);
+        toolbar.setVisibility(View.INVISIBLE);
+        delaySetFuncBarVisiablity(false);
+    }
+
+    Disposable visObservable = null;
+
+    private void delaySetFuncBarVisiablity(final boolean b) {
+        Log.i("MainActivity","delaySetFuncBarVisiablity#begin");
+
+        if(visObservable!=null && !visObservable.isDisposed()){
+            visObservable.dispose();
+        }
+
+        visObservable =
+                Observable
+                .concat(Observable.create(new ObservableOnSubscribe<Boolean>() {
+                    @Override
+                    public void subscribe(ObservableEmitter<Boolean> e) throws Exception {
+
+                        if(b == (func_bar.getVisibility() == View.VISIBLE)){
+                            Log.i("MainActivity","subscribe#111 # 1");
+                            e.onNext(b);//不执行第二个Observable
+                        }
+                        else{
+                            Log.i("MainActivity","subscribe#111 # 2");
+                            e.onComplete();//继续执行第二个
+                        }
+                    }
+                }).subscribeOn(AndroidSchedulers.mainThread()),Observable.create(new ObservableOnSubscribe<Boolean>(){
+
+                    @Override
+                    public void subscribe(ObservableEmitter<Boolean> e) throws Exception {
+                        Log.i("MainActivity","subscribe#222");
+                        func_bar.setVisibility(b ? View.VISIBLE : View.INVISIBLE);
+                        e.onNext(b);
+                    }
+                }).subscribeOn(AndroidSchedulers.mainThread()))
+                .delaySubscription(5, TimeUnit.SECONDS)
+                .observeOn(Schedulers.io())
+                .subscribe(new Consumer<Boolean>() {
+                    @Override
+                    public void accept(Boolean aBoolean) throws Exception {
+                        Log.i("MainActivity","accept#成功执行！");
+                    }
+                }, new Consumer<Throwable>() {
+                    @Override
+                    public void accept(Throwable throwable) throws Exception {
+                        Log.i("MainActivity","accept#throwable#执行异常！");
+                        throwable.printStackTrace();
+                    }
+                });
+
+    }
+
+    SearchFragment searchFragment;
+
+    private void initSearchFragment() {
+        searchFragment = SearchFragment.newInstance();
+
+        searchFragment.setOnSearchClickListener(new IOnSearchClickListener() {
+            @Override
+            public void OnSearchClick(String keyword) { //这里处理逻辑
+                 Toast.makeText(MainActivity.this, "听说你要搜"+keyword, Toast.LENGTH_SHORT).show();
+                 }
+        });
+
+        toolbar.search_icon.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                searchFragment.show(getSupportFragmentManager(),SearchFragment.TAG);
+            }
+        });
+    }
+
     static public void setTranslucentWindows(Activity activity) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             //透明状态栏
@@ -175,17 +246,17 @@ public class MainActivity extends AppCompatActivity {
     }
 
 
-    int oldHeight,oldWidth;
+
 
     private void initAppBarLayout() {
         appbarLayout.addOnOffsetChangedListener(new AppBarLayout.OnOffsetChangedListener() {
             @Override
             public void onOffsetChanged(AppBarLayout appBarLayout, int verticalOffset) {
+                Log.i("MainActivity","onOffsetChanged#"+verticalOffset);
                 int total = appBarLayout.getTotalScrollRange();
-                Log.i("MainActivity","onOffsetChanged#total:"+total+"/verticalOffset:"+verticalOffset);
                 float percentage = (float)Math.abs(verticalOffset)/(float)total;
-                Log.i("MainActivity","onOffsetChanged#");
                 refleshAlpha(toolbar, 500, percentage);
+
             }
         });
     }
@@ -288,17 +359,57 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onBackPressed() {
-        mBackPressed = true;
-        super.onBackPressed();
+        if(getRequestedOrientation() == ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE){
+            turnToPortrait();
+        }
+        else
+            super.onBackPressed();
     }
+
     @Override
     protected void onStop() {
         super.onStop();
-        //点击返回或不允许后台播放时 释放资源
-        if (mBackPressed) {
-            ijkPlayer.stopPlayback();
-            ijkPlayer.release(true);
-        }
+        /**点击返回或不允许后台播放时 释放资源,没什么用，因为surfacedestory在onStop前就调用了
+         if(smallScreenView!=null && smallScreenView.ijkPlayer!=null && smallScreenView.ijkPlayer.canPause()) {
+         smallScreenView.ijkPlayer.pause();
+         }
+         **/
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        if(smallScreenView!=null && smallScreenView.ijkPlayer!=null && !smallScreenView.ijkPlayer.isPlaying())
+            if(smallScreenView.ijkPlayer.getmUri()==null){
+                Log.i("MainActivity","onStart#url init");
+                smallScreenView.initPlay(smallScreenView.vidoeUrl);
+            }
+            else{
+                if(!smallScreenView.ijkPlayer.isPlaying()){
+                        //smallScreenView.ijkPlayer.play();
+                }
+            }
+    }
+
+    @Override
+    protected void onPause() {
+        Log.i("MainActivity","onPause#begin");
+        smallScreenView.ijkPlayer.pause();
+        super.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        Log.i("MainActivity","onResume#begin");
+        //BUG ：直接start的话，音视频不同步
+        smallScreenView.ijkPlayer.play();
+        super.onResume();
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        smallScreenView.ijkPlayer.destory();
     }
 
     /*
@@ -337,4 +448,5 @@ public class MainActivity extends AppCompatActivity {
         }
     }
     */
+
 }

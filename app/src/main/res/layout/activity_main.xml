@@ -4,14 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:id="@+id/coorLayout"
     tools:context="com.deyizai.taptapdetaildemo.MainActivity">
+
 
 
     <android.support.design.widget.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="429dp"
+        android:layout_height="381dp"
         android:orientation="vertical"
         android:id="@+id/appbarLayout"
+
         >
         <!--exitUntilCollapsed收缩到pin View就不收缩（或滚动）了；
         如果里面有pin view，则会收缩到pin view，然后滚动消失，下滑再显示pinView；
@@ -27,6 +30,7 @@
                 android:scaleType="fitCenter"
                 android:src="@drawable/default_bg"
                 android:id="@+id/main_poster"
+                android:visibility="invisible"
             />
 
             <RelativeLayout
@@ -112,34 +116,32 @@
                     />
             </RelativeLayout>
 
-            <RelativeLayout
-                android:layout_width="match_parent"
-                android:layout_height="200dp"
-                android:visibility="invisible"
-                android:background="#000"
-                android:fitsSystemWindows="true"
-                android:id="@+id/smallScreen" />
-
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
                 android:layout_marginTop="380dp"
+                app:layout_collapseMode="pin"
                 android:background="#30000000"/>
             <!--app:navigationIcon:就是那个小箭头，默认null-->
-            <com.deyizai.taptapdetaildemo.CommAlphaToolbar
+            <android.support.v7.widget.Toolbar
                 android:layout_width="match_parent"
                 android:layout_height="?attr/actionBarSize"
-                android:background="#20000000"
-                android:id="@+id/toolbar"
-                app:layout_collapseMode="pin"
-                app:title="@string/app_name"
-                app:titleTextColor="#fff"
-                app:buttonGravity="top">
+                android:layout_marginTop="20dp"
+                android:id="@+id/toolbar_region"
+                app:layout_collapseMode="pin">
 
-            </com.deyizai.taptapdetaildemo.CommAlphaToolbar>
+            </android.support.v7.widget.Toolbar>
         </android.support.design.widget.CollapsingToolbarLayout>
         <!--layout_scrollFlags/layout_collapseMode-->
         <!--pin的意思是：固定在栏顶-->
+
+    </android.support.design.widget.AppBarLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior">
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="48dp"
@@ -164,39 +166,80 @@
                 android:visibility="gone"
                 android:id="@+id/download_in_tab"></Button>
         </LinearLayout>
-    </android.support.design.widget.AppBarLayout>
 
-        <!--app:layout_behavior="@string/appbar_scrolling_view_behavior"
-            不加这句，就是完全独立的，因为CoordinatorLayout本身是FrameLayout布局，此时就是重叠的情况，且没有交互-->
+        <View
+            android:layout_width="match_parent"
+            android:layout_height="8dp"
+            android:background="#10000000"
+            app:layout_collapseMode="pin"/>
+            <!--app:layout_behavior="@string/appbar_scrolling_view_behavior"
+                不加这句，就是完全独立的，因为CoordinatorLayout本身是FrameLayout布局，此时就是重叠的情况，且没有交互-->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:orientation="vertical"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior">
-            <View
-                android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:background="#10000000"/>
+            >
 
             <com.deyizai.taptapdetaildemo.MeasurableViewPager
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:background="#666"
                 android:id="@+id/viewPager">
-            <!--这里原生ViewPager设为确定值时才有效..看来要自己处理才行-->
+                <!--这里原生ViewPager设为确定值时才有效..看来要自己处理才行-->
             </com.deyizai.taptapdetaildemo.MeasurableViewPager>
         </LinearLayout>
+    </LinearLayout>
 
-
-
-    <RelativeLayout
+    <com.deyizai.taptapdetaildemo.player.ScreenVideoView
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"
+        android:layout_height="200dp"
+        android:visibility="invisible"
         android:background="#000"
-        android:id="@+id/fullScreen">
+        android:fitsSystemWindows="true"
+        android:id="@+id/smallScreen"
+        android:descendantFocusability="afterDescendants"
+        app:layout_behavior=".PlayerBehavior">
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="40dp"
+            android:background="#66666666"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_alignParentBottom="true"
+            android:id="@+id/func_bar">
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:id="@+id/audio_img"
+                android:src="@android:drawable/presence_audio_away"/>
 
-    </RelativeLayout>
+            <SeekBar
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:maxHeight="2.0dp"
+                android:minHeight="2.0dp"
+                android:progressDrawable="@drawable/seekbar_shape"
+                android:id="@+id/seekBar"
+                android:thumb="@drawable/seebar_seletor"/>
+            <ImageView
+                android:layout_width="30dp"
+                android:layout_height="30dp"
+                android:id="@+id/screen_img"
+                android:src="@drawable/ic_action_full_screen"/>
+        </LinearLayout>>
+    </com.deyizai.taptapdetaildemo.player.ScreenVideoView>
 
+    <com.deyizai.taptapdetaildemo.CommAlphaToolbar
+        android:layout_width="match_parent"
+        android:layout_height="75dp"
+        android:paddingTop="20dp"
+        android:background="#20000000"
+        android:id="@+id/toolbar"
+        app:title="@string/app_name"
+        app:titleTextColor="#fff"
+        app:buttonGravity="top">
+
+    </com.deyizai.taptapdetaildemo.CommAlphaToolbar>
 
 </android.support.design.widget.CoordinatorLayout>

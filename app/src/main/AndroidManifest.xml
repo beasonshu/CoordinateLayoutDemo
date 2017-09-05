@@ -11,6 +11,11 @@
         android:theme="@style/AppTheme">
         <activity android:name=".MainActivity"
             android:configChanges="keyboardHidden|orientation|screenSize">
+
+        </activity>
+
+        <activity android:name=".SecondActivity"
+            android:launchMode="singleTask">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 

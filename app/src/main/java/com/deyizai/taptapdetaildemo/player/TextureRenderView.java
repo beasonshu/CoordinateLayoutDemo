@@ -88,8 +88,11 @@ public class TextureRenderView extends TextureView implements IRenderView {
         mSurfaceCallback.didDetachFromWindow();
     }
 
+
+
     //--------------------
     // Layout & Measure
+    //
     //--------------------
     @Override
     public void setVideoSize(int videoWidth, int videoHeight) {
@@ -209,15 +212,16 @@ public class TextureRenderView extends TextureView implements IRenderView {
         mSurfaceCallback.removeRenderCallback(callback);
     }
 
-    private SurfaceCallback mSurfaceCallback;
+    protected SurfaceCallback mSurfaceCallback;
 
-    private static final class SurfaceCallback implements SurfaceTextureListener, ISurfaceTextureHost {
-        private SurfaceTexture mSurfaceTexture;
+    protected static final class SurfaceCallback implements SurfaceTextureListener, ISurfaceTextureHost {
+        //todo: 这里！！！！，通过callback保存的surface即时恢复播放
+        protected SurfaceTexture mSurfaceTexture;
         private boolean mIsFormatChanged;
         private int mWidth;
         private int mHeight;
 
-        private boolean mOwnSurfaceTexture = true;
+        private boolean mOwnSurfaceTexture = false;//是否获得
         private boolean mWillDetachFromWindow = false;
         private boolean mDidDetachFromWindow = false;
 
@@ -230,6 +234,7 @@ public class TextureRenderView extends TextureView implements IRenderView {
 
         public void setOwnSurfaceTexture(boolean ownSurfaceTexture) {
             mOwnSurfaceTexture = ownSurfaceTexture;
+
         }
 
         public void addRenderCallback(@NonNull IRenderCallback callback) {
@@ -255,6 +260,7 @@ public class TextureRenderView extends TextureView implements IRenderView {
 
         @Override
         public void onSurfaceTextureAvailable(SurfaceTexture surface, int width, int height) {
+            Log.i("SurfaceCallback","onSurfaceTextureAvailable#"+(mSurfaceTexture == surface));
             mSurfaceTexture = surface;
             mIsFormatChanged = false;
             mWidth = 0;
@@ -268,6 +274,7 @@ public class TextureRenderView extends TextureView implements IRenderView {
 
         @Override
         public void onSurfaceTextureSizeChanged(SurfaceTexture surface, int width, int height) {
+            Log.i("SurfaceCallback","onSurfaceTextureSizeChanged#w:"+width+"/h:"+height);
             mSurfaceTexture = surface;
             mIsFormatChanged = true;
             mWidth = width;
@@ -281,6 +288,10 @@ public class TextureRenderView extends TextureView implements IRenderView {
 
         @Override
         public boolean onSurfaceTextureDestroyed(SurfaceTexture surface) {
+            /** TODO: 2017-9-4 当然了这里也要处理！
+             *  TODO:看源码TextureView会根据这个return false 避免surface被release
+             */
+
             mSurfaceTexture = surface;
             mIsFormatChanged = false;
             mWidth = 0;
@@ -292,7 +303,9 @@ public class TextureRenderView extends TextureView implements IRenderView {
             }
 
             Log.d(TAG, "onSurfaceTextureDestroyed: destroy: " + mOwnSurfaceTexture);
-            return mOwnSurfaceTexture;
+
+
+            return false;
         }
 
         @Override

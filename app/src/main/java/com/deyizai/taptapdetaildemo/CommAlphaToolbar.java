@@ -8,6 +8,7 @@ import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 /**
@@ -20,6 +21,7 @@ import android.widget.RelativeLayout;
 public class CommAlphaToolbar extends Toolbar{
 
     View mContent;
+    public ImageView nav_icon,search_icon;
 
     public CommAlphaToolbar(Context context) {
         super(context);
@@ -38,6 +40,8 @@ public class CommAlphaToolbar extends Toolbar{
 
     private void init(Context context) {
         mContent = LayoutInflater.from(context).inflate(R.layout.auto_toolbar,null);
+        nav_icon = (ImageView) mContent.findViewById(R.id.navgation_icon);
+        search_icon = (ImageView) mContent.findViewById(R.id.search_icon);
         addView(mContent, WindowManager.LayoutParams.MATCH_PARENT ,WindowManager.LayoutParams.MATCH_PARENT);
     }
 
